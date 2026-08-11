@@ -33,40 +33,54 @@ function PosterFrame({ session, scrollYProgress, index, total }) {
     const opacity = useTransform(scrollYProgress, [left, center, right], [0, 1, 0]);
     const scale = useTransform(scrollYProgress, [left, center, right], [1.06, 1, 1.06]);
 
+    const isGaining = session.tag === "Leg Day" || session.tag === "Push Day";
+
     return (
-        <motion.div style={{ opacity }} className="absolute inset-0">
-            <motion.img
-                src={session.img}
-                alt={session.tag}
-                loading="lazy"
+        <motion.div style={{ opacity }} className="absolute inset-0 flex flex-col items-center justify-center overflow-hidden">
+            {/* Background image with scale */}
+            <motion.div
                 style={{ scale }}
-                className="absolute inset-0 h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.35),transparent_40%,rgba(0,0,0,0.5))]" />
-            <div className="absolute inset-0 flex flex-col justify-between p-6 text-secondary">
-                <div className="flex justify-between">
-                    <span className="label-xs">
-                        {session.focus}
-                        <br />
-                        Coached
-                    </span>
-                    <span className="label-xs text-right">
-                        {session.date}
-                        <br />
-                        This week
-                    </span>
+                className="absolute inset-0"
+            >
+                <img
+                    src={isGaining ? "/musclegain.png" : "/fatloss.png"}
+                    alt={session.tag}
+                    loading="lazy"
+                    className="absolute inset-0 h-full w-full object-cover"
+                />
+            </motion.div>
+
+            {/* Gradient overlay */}
+            <div className="absolute inset-0 bg-gradient-to-b from-primary/70 via-primary/60 to-primary/80" />
+
+            {/* Content - no scale to prevent blur */}
+            <div
+                className="relative z-10 flex flex-col items-center justify-center gap-8 px-6 text-center"
+            >
+                <div>
+                    <h2 className="font-display text-5xl font-bold uppercase tracking-tight text-secondary sm:text-6xl">
+                        {isGaining ? "Muscle" : "Fat"}
+                    </h2>
+                    <p className="mt-3 font-mono text-xs uppercase tracking-[0.4em] text-secondary/70">
+                        {isGaining ? "Gaining" : "Losing"}
+                    </p>
                 </div>
-                <div className="flex items-end justify-between">
-                    <span className="label-xs">
-                        {session.tag}
-                        <br />
-                        2026
-                    </span>
-                    <span className="label-xs text-right">
-                        {session.equipment}
-                        <br />
-                        {session.season}
-                    </span>
+
+                <div className="flex flex-col gap-4">
+                    <div>
+                        <p className="font-mono text-xs uppercase tracking-widest text-secondary/60">
+                            {session.date}
+                        </p>
+                        <p className="mt-2 text-sm leading-relaxed text-secondary/80">
+                            {session.focus}
+                        </p>
+                    </div>
+
+                    <div className="border-t border-secondary/20 pt-4">
+                        <span className="inline-block rounded-full border border-ember px-3 py-1.5 font-mono text-[10px] uppercase tracking-widest text-ember">
+                            {session.equipment}
+                        </span>
+                    </div>
                 </div>
             </div>
         </motion.div>
@@ -120,7 +134,7 @@ export default function StickyPoster() {
 
                 <motion.div
                     style={{ y: posterY }}
-                    className="relative aspect-[3/4] w-[min(78vw,22rem)] overflow-hidden rounded-3xl bg-primary"
+                    className="relative aspect-[3/4] w-[min(88vw,28rem)] overflow-hidden rounded-3xl border-4 border-foreground/40 bg-primary"
                 >
                     {sessions.map((session, i) => (
                         <PosterFrame

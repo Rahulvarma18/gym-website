@@ -49,7 +49,7 @@ export default function Lookbook() {
                     </div>
 
                     {/* Pinned card */}
-                    <div className="relative h-[64vh] w-[86vw] max-w-sm overflow-hidden rounded-[2rem] border border-steel-dim/50 shadow-2xl sm:h-[66vh]">
+                    <div className="relative h-[70vh] w-[92vw] max-w-2xl overflow-hidden rounded-[2rem] border-4 border-foreground/30 shadow-2xl sm:h-[72vh]">
                         <SessionFace session={current} opacity={1} />
                         {next && <SessionFace session={next} opacity={fadeT} />}
                     </div>
@@ -60,36 +60,39 @@ export default function Lookbook() {
 }
 
 function SessionFace({ session, opacity }) {
+    const isGaining = session.tag === "Leg Day" || session.tag === "Push Day";
+
     return (
-        <div className="absolute inset-0" style={{ opacity }}>
-            <img
-                src={session.img}
-                alt={session.tag}
-                className="h-full w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-ink/70 via-ink/10 to-ink/80" />
+        <div className="absolute inset-0 flex items-center justify-center" style={{ opacity }}>
+            {/* Background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-ink via-ink/80 to-ink/95" />
 
-            <div className="absolute inset-x-0 top-0 flex items-start justify-between p-5">
-                <span className="max-w-[55%] font-mono text-[10px] uppercase tracking-widest text-paper/80">
-                    {session.focus}
-                </span>
-                <span className="font-mono text-[10px] uppercase tracking-widest text-paper/60">
-                    {session.date}
-                </span>
-            </div>
+            {/* Content */}
+            <div className="relative z-10 flex w-full flex-col items-center justify-center gap-12 p-8 text-center">
+                <div>
+                    <h3 className="font-display text-5xl uppercase tracking-tight text-paper sm:text-6xl md:text-7xl">
+                        {isGaining ? "Muscle" : "Fat"}
+                    </h3>
+                    <p className="mt-2 font-mono text-xs uppercase tracking-[0.3em] text-paper/60">
+                        {isGaining ? "Gaining" : "Losing"}
+                    </p>
+                </div>
 
-            <div className="absolute inset-x-0 bottom-0 p-5">
-                <h3 className="font-display text-2xl uppercase text-paper sm:text-3xl">
-                    {session.tag}
-                </h3>
-                <div className="mt-3 flex items-center justify-between border-t border-paper/20 pt-3">
-                    <span className="font-mono text-[10px] uppercase tracking-widest text-paper/60">
-                        {session.season}
-                    </span>
-                    <span className="flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest text-paper/80">
-                        <span className="h-1.5 w-1.5 rounded-full bg-ember shadow-[0_0_8px_#ff4310]" />
-                        {session.equipment}
-                    </span>
+                <div className="flex flex-col gap-6 sm:gap-8">
+                    <div className="max-w-xs">
+                        <p className="font-mono text-xs uppercase tracking-widest text-paper/70">
+                            {session.date}
+                        </p>
+                        <p className="mt-3 text-sm leading-relaxed text-paper/80">
+                            {session.focus}
+                        </p>
+                    </div>
+
+                    <div className="border-t border-paper/20 pt-6">
+                        <span className="inline-block rounded-full border border-ember px-4 py-2 font-mono text-xs uppercase tracking-widest text-ember">
+                            {session.equipment}
+                        </span>
+                    </div>
                 </div>
             </div>
         </div>

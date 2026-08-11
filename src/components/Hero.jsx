@@ -126,7 +126,7 @@ export default function Hero() {
             ))}
           </div>
           <p className="text-xs leading-relaxed text-foreground/70">
-            Coaching built around your body. Strength, conditioning and recovery in one membership — open 24/7.
+            Coaching built around your body. Strength, conditioning and recovery in one membership.
           </p>
         </motion.div>
       </section>
