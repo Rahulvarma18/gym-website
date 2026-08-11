@@ -1,15 +1,19 @@
 import { useState } from "react";
 import { motion } from "motion/react";
+import { Link } from "react-router-dom";
 import { User, Settings, Menu, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import AuthModal from "./AuthModal";
 
+// These point at section ids that only exist on the homepage, so they're
+// prefixed with "/" — if we're on /nutrition or /recovery this routes back
+// to home first, then HashScroll (see ScrollToTop.jsx) scrolls to the id.
 const left = [
-  { label: "Classes", href: "#classes" },
-  { label: "Coaches", href: "#coaches" },
-  { label: "Pricing", href: "#pricing" },
+  { label: "Classes", href: "/#classes" },
+  { label: "Coaches", href: "/#coaches" },
+  { label: "Pricing", href: "/#pricing" },
 ];
-const right = [{ label: "Contact", href: "#contact" }];
+const right = [{ label: "Contact", href: "/#contact" }];
 
 export default function Navbar({ onAdminClick, onOpenAuth }) {
   const [modal, setModal] = useState(null);
@@ -34,35 +38,35 @@ export default function Navbar({ onAdminClick, onOpenAuth }) {
           <div className="hidden w-full flex-row items-center justify-between px-8 py-4 md:flex">
             <nav className="flex items-center gap-7">
               {left.map((item) => (
-                <a
+                <Link
                   key={item.label}
-                  href={item.href}
+                  to={item.href}
                   className="label-xs text-foreground/70 transition-colors hover:text-foreground"
                 >
                   {item.label}
-                </a>
+                </Link>
               ))}
             </nav>
 
-            <a
-              href="#home"
+            <Link
+              to="/"
               className="flex items-center rounded-b-3xl bg-secondary px-12 py-3 shadow-[0_1px_0_var(--color-border)]"
             >
               <span className="font-display text-xl font-semibold tracking-[0.32em]">
                 IRON<span className="text-ember">WORKS</span>
               </span>
-            </a>
+            </Link>
 
             <div className="flex items-center gap-7">
               <nav className="flex items-center gap-7">
                 {right.map((item) => (
-                  <a
+                  <Link
                     key={item.label}
-                    href={item.href}
+                    to={item.href}
                     className="label-xs text-foreground/70 transition-colors hover:text-foreground"
                   >
                     {item.label}
-                  </a>
+                  </Link>
                 ))}
               </nav>
 
@@ -102,12 +106,12 @@ export default function Navbar({ onAdminClick, onOpenAuth }) {
 
           {/* Mobile navbar */}
           <div className="flex w-full items-center justify-between px-5 py-3 md:hidden">
-            <a
-              href="#home"
+            <Link
+              to="/"
               className="flex items-center rounded-full bg-secondary px-4 py-2 text-sm font-semibold tracking-wide"
             >
               IRON<span className="text-ember">WORKS</span>
-            </a>
+            </Link>
 
             <div className="flex items-center gap-2">
               {user ? (
@@ -166,14 +170,14 @@ export default function Navbar({ onAdminClick, onOpenAuth }) {
             >
               <div className="flex flex-col gap-4">
                 {[...left, ...right].map((item) => (
-                  <a
+                  <Link
                     key={item.label}
-                    href={item.href}
+                    to={item.href}
                     className="label-xs text-foreground/70 transition-colors hover:text-foreground"
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     {item.label}
-                  </a>
+                  </Link>
                 ))}
               </div>
             </motion.nav>

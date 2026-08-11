@@ -1,4 +1,5 @@
 import { motion } from "motion/react";
+import { Link } from "react-router-dom";
 
 const links = ["Classes", "Coaches", "Pricing", "Contact"];
 
@@ -37,13 +38,13 @@ export default function Footer({ onOpenAuth }) {
 
         <div className="mt-16 flex flex-wrap items-center justify-between gap-6 border-t border-primary-foreground/15 pt-8">
           {links.map((l) => (
-            <a
+            <Link
               key={l}
-              href={`#${l.toLowerCase()}`}
+              to={`/#${l.toLowerCase()}`}
               className="label-xs text-primary-foreground/60 hover:text-primary-foreground"
             >
               {l}
-            </a>
+            </Link>
           ))}
           <span className="label-xs text-primary-foreground/40">© 2026 Ironworks</span>
         </div>

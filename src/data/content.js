@@ -46,7 +46,7 @@ export const sessions = [
     date: "MON / THU",
     focus: "Squat, hinge & unilateral work",
     equipment: "Barbell rack",
-    img: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1400",
+    img: "./image copy.png",
   },
   {
     tag: "Push Day",
@@ -54,7 +54,7 @@ export const sessions = [
     date: "TUE / FRI",
     focus: "Chest, shoulders & triceps",
     equipment: "Free weights",
-    img: "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=1400&q=80",
+    img: "image copy 2.png",
   },
   {
     tag: "Pull Day",
@@ -62,7 +62,7 @@ export const sessions = [
     date: "WED / SAT",
     focus: "Back, biceps & grip work",
     equipment: "Pull-up rig",
-    img: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=1400&q=80",
+    img: "image copy 3.png",
   },
   {
     tag: "Conditioning",
@@ -70,7 +70,7 @@ export const sessions = [
     date: "SATURDAY",
     focus: "Full-body metabolic circuit",
     equipment: "Open floor",
-    img: "https://images.unsplash.com/photo-1517964603305-11c0f6f66012?w=1400&q=80",
+    img: "image copy 4.png",
   },
 ];
 
@@ -86,19 +86,19 @@ export const coaches = [
     name: "Ravi Teja Varma",
     role: "Head Coach · Strength & Bodybuilding",
     bio: "Certified strength coach with 10+ years training competitive lifters across Andhra Pradesh.",
-    img: "https://images.unsplash.com/photo-1583500178689-665d1f77e67d?w=900&q=80",
+    img: "./image copy 5.png",
   },
   {
     name: "Srinivas Reddy",
     role: "Weight Loss & Transformation",
     bio: "Specialises in fat-loss programming and nutrition planning for busy working professionals.",
-    img: "https://images.unsplash.com/photo-1630065612476-294f637f0248?w=900&q=80",
+    img: "./image copy 6.png",
   },
   {
     name: "Naveen Kumar Chowdary",
     role: "Functional Fitness",
     bio: "Runs the circuit and mobility floor. Focused on building everyday strength that lasts.",
-    img: "https://images.unsplash.com/photo-1707900285737-09a42c837118?w=900&q=80",
+    img: "image copy 12.png",
   },
 ];
 
@@ -155,6 +155,89 @@ export const faqs = [
   {
     q: "Do you offer diet plans?",
     a: "Yes, all Monthly and Yearly members get personalised diet guidance from our coaches.",
+  },
+];
+
+// Detail content for the "Diet plans" wide card / dedicated Nutrition page.
+export const nutritionPlans = [
+  {
+    name: "Lean Fuel",
+    goal: "Fat loss",
+    calories: "1,800 kcal",
+    macros: "40P / 35C / 25F",
+    meals: ["Egg white & oat breakfast bowl", "Grilled chicken millet bowl", "Paneer & veg stir-fry"],
+    img: "./image copy 7.png",
+  },
+  {
+    name: "Mass Builder",
+    goal: "Muscle gain",
+    calories: "3,000 kcal",
+    macros: "35P / 45C / 20F",
+    meals: ["Peanut butter banana shake", "Rice, dal & double chicken", "Sweet potato & fish curry"],
+    img: "./image copy 8.png",
+  },
+  {
+    name: "Maintain & Perform",
+    goal: "Body recomposition",
+    calories: "2,300 kcal",
+    macros: "35P / 40C / 25F",
+    meals: ["Sprouts & multigrain toast", "Quinoa power bowl", "Grilled fish & greens"],
+    img: "./image copy 9.png",
+  },
+];
+
+export const nutritionPillars = [
+  {
+    title: "Coached, not generic",
+    description: "Every plan is built around your training split, goals, and food preferences — not a copy-paste PDF.",
+  },
+  {
+    title: "Macro-first, flexible",
+    description: "We set your protein, carb, and fat targets, then let you swap meals freely within them.",
+  },
+  {
+    title: "Monthly recalibration",
+    description: "Calories and macros are adjusted every check-in as your weight and performance change.",
+  },
+];
+
+// Detail content for the "Mobility block" wide card / dedicated Recovery page.
+export const mobilityRoutines = [
+  {
+    name: "Morning Reset",
+    duration: "10 min",
+    focus: "Hips & spine",
+    moves: ["Cat-cow flow", "90/90 hip switches", "Thoracic rotations"],
+    img: "./image copy 10.png",
+  },
+  {
+    name: "Post-Lift Flush",
+    duration: "15 min",
+    focus: "Legs & lower back",
+    moves: ["Pigeon stretch", "Foam roll quads & IT band", "Standing hamstring reach"],
+    img: "./image copy 11.png",
+  },
+  {
+    name: "Shoulder Care",
+    duration: "12 min",
+    focus: "Shoulders & upper back",
+    moves: ["Band pull-aparts", "Wall slides", "Sleeper stretch"],
+    img: "image.png",
+  },
+];
+
+export const recoveryPillars = [
+  {
+    title: "Built into every block",
+    description: "Mobility work is programmed alongside your lifts, not left as homework you never get to.",
+  },
+  {
+    title: "Coach-guided form",
+    description: "Our floor coaches walk you through each stretch so you're loosening the right joint, safely.",
+  },
+  {
+    title: "Track what loosens up",
+    description: "Range-of-motion checks each month so recovery work shows up as real, measurable progress.",
   },
 ];
 
