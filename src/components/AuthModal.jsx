@@ -2,8 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthContext";
 
 const inputCls =
-  "w-full rounded-lg border border-steel-dim/40 bg-concrete px-4 py-3 text-sm text-paper placeholder-steel focus:border-ember focus:outline-none transition-colors";
-const labelCls = "block mb-1.5 text-xs font-semibold uppercase tracking-widest text-steel";
+  "w-full rounded-lg border border-border bg-background px-4 py-3 text-sm text-foreground placeholder-muted-foreground/60 focus:border-ember focus:outline-none transition-colors";
+const labelCls = "label-xs mb-1.5 block text-muted-foreground";
 
 export default function AuthModal({ mode: initialMode, onClose }) {
   const { login, signup } = useAuth();
@@ -73,11 +73,11 @@ export default function AuthModal({ mode: initialMode, onClose }) {
     <div
       ref={overlayRef}
       className="fixed inset-0 z-[200] flex items-center justify-center p-4"
-      style={{ backgroundColor: "rgba(10,8,6,0.85)", backdropFilter: "blur(6px)" }}
+      style={{ backgroundColor: "rgba(23,21,15,0.55)", backdropFilter: "blur(6px)" }}
       onClick={(e) => e.target === overlayRef.current && onClose()}
     >
       <div
-        className="relative w-full max-w-md rounded-2xl border border-steel-dim/30 bg-concrete shadow-2xl"
+        className="relative w-full max-w-md border border-border border-t-4 border-t-ember bg-background shadow-2xl"
         style={{ animation: "modalIn 0.25s cubic-bezier(0.16,1,0.3,1) both" }}
       >
         {/* Close button */}
@@ -85,31 +85,34 @@ export default function AuthModal({ mode: initialMode, onClose }) {
           id="auth-modal-close"
           onClick={onClose}
           aria-label="Close"
-          className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-steel hover:bg-steel-dim/30 hover:text-paper transition-colors"
+          className="absolute right-4 top-6 flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
           </svg>
         </button>
 
-        <div className="px-8 pb-8 pt-7">
-          {/* Logo */}
-          <p className="font-display text-lg tracking-wide text-paper mb-1">
-            IRON<span className="text-ember">WORKS</span>
-          </p>
+        {/* Hanging logo tag, echoes the navbar lockup */}
+        <div className="flex justify-center">
+          <div className="rounded-b-2xl bg-secondary px-8 py-2.5 shadow-[0_1px_0_var(--color-border)]">
+            <span className="font-display text-lg tracking-[0.2em] text-foreground">
+              IRON<span className="text-ember">WORKS</span>
+            </span>
+          </div>
+        </div>
 
+        <div className="px-8 pb-8 pt-6">
           {/* Tab switcher */}
-          <div className="mt-5 mb-6 flex rounded-xl bg-ink p-1 gap-1">
+          <div className="mb-6 flex rounded-full bg-muted p-1 gap-1">
             {["login", "signup"].map((m) => (
               <button
                 key={m}
                 id={`auth-tab-${m}`}
                 onClick={() => switchMode(m)}
-                className={`flex-1 rounded-lg py-2 text-xs font-semibold uppercase tracking-widest transition-all ${
-                  mode === m
-                    ? "bg-ember text-ink shadow"
-                    : "text-steel hover:text-paper"
-                }`}
+                className={`label-xs flex-1 rounded-full py-2.5 transition-all ${mode === m
+                    ? "bg-primary text-primary-foreground shadow"
+                    : "text-muted-foreground hover:text-foreground"
+                  }`}
               >
                 {m === "login" ? "Log In" : "Sign Up"}
               </button>
@@ -215,7 +218,7 @@ export default function AuthModal({ mode: initialMode, onClose }) {
             )}
 
             {error && (
-              <p className="rounded-lg bg-ember/10 border border-ember/30 px-4 py-2.5 text-xs text-ember">
+              <p className="rounded-lg border border-ember/30 bg-ember/10 px-4 py-2.5 text-xs text-ember">
                 {error}
               </p>
             )}
@@ -224,22 +227,22 @@ export default function AuthModal({ mode: initialMode, onClose }) {
               id="auth-submit-btn"
               type="submit"
               disabled={loading}
-              className="mt-1 w-full rounded-full bg-ember py-3.5 font-mono text-xs font-semibold uppercase tracking-widest text-ink transition-all hover:bg-brass disabled:opacity-60 disabled:cursor-not-allowed"
+              className="label-xs mt-1 w-full rounded-full bg-primary py-3.5 text-primary-foreground transition-transform hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               {loading
                 ? "Please wait…"
                 : mode === "login"
-                ? "Log In →"
-                : "Create Account →"}
+                  ? "Log In →"
+                  : "Create Account →"}
             </button>
           </form>
 
-          <p className="mt-5 text-center text-xs text-steel">
+          <p className="mt-5 text-center text-xs text-muted-foreground">
             {mode === "login" ? "No account yet?" : "Already a member?"}{" "}
             <button
               id={`auth-switch-${mode === "login" ? "signup" : "login"}`}
               onClick={() => switchMode(mode === "login" ? "signup" : "login")}
-              className="text-brass underline-offset-2 hover:underline"
+              className="font-semibold text-ember underline-offset-2 hover:underline"
             >
               {mode === "login" ? "Sign up" : "Log in"}
             </button>
