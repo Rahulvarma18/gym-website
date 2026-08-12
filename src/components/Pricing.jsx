@@ -3,7 +3,7 @@ import { pricingTiers, faqs } from "../data/content";
 import Reveal from "./Reveal";
 import { useAuth } from "../context/AuthContext";
 
-const API = "http://localhost:5000/api";
+const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
 
 export default function Pricing({ onOpenAuth }) {
   const [openFaq, setOpenFaq] = useState(null);
@@ -71,8 +71,8 @@ export default function Pricing({ onOpenAuth }) {
         {statusMsg.text && (
           <div
             className={`mt-6 rounded-xl border px-5 py-4 font-mono text-xs ${statusMsg.type === "success"
-                ? "border-emerald-500/40 bg-emerald-950/30 text-emerald-300"
-                : "border-ember/40 bg-ember/10 text-ember"
+              ? "border-emerald-500/40 bg-emerald-950/30 text-emerald-300"
+              : "border-ember/40 bg-ember/10 text-ember"
               }`}
           >
             {statusMsg.text}
@@ -86,8 +86,8 @@ export default function Pricing({ onOpenAuth }) {
               variant="scale"
               delay={i * 100}
               className={`flex flex-col border p-8 ${tier.featured
-                  ? "border-ember bg-muted"
-                  : "border-border bg-secondary"
+                ? "border-ember bg-muted"
+                : "border-border bg-secondary"
                 }`}
             >
               {tier.featured && (
@@ -115,8 +115,8 @@ export default function Pricing({ onOpenAuth }) {
                 disabled={loadingPlan === tier.name}
                 onClick={() => handleSelectPlan(tier)}
                 className={`mt-8 border px-5 py-3 text-center font-mono text-xs uppercase tracking-widest transition-colors ${tier.featured
-                    ? "border-ember bg-ember text-ink hover:bg-transparent hover:text-ember"
-                    : "border-border text-foreground hover:border-foreground"
+                  ? "border-ember bg-ember text-ink hover:bg-transparent hover:text-ember"
+                  : "border-border text-foreground hover:border-foreground"
                   } disabled:opacity-50`}
               >
                 {loadingPlan === tier.name
