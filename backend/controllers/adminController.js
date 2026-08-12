@@ -1,6 +1,7 @@
 import User from '../models/User.js';
 import Plan from '../models/Plan.js';
 import Registration from '../models/Registration.js';
+import { pauseMembership, resumeMembership } from '../utils/membershipStatus.js';
 
 // @route   GET /api/admin/dashboard
 // @desc    Get dashboard statistics
@@ -235,23 +236,23 @@ export const getPlanMembers = async (req, res) => {
 };
 
 // @route   PUT /api/admin/members/:id/status
-// @desc    Update member status
+// @desc    Update member status. Deactivating pauses their plan's expiry
+//          clock; reactivating resumes it and adds back the paused days.
 export const updateMemberStatus = async (req, res) => {
     try {
         const { isActive } = req.body;
 
-        const member = await User.findByIdAndUpdate(
-            req.params.id,
-            { isActive },
-            { new: true }
-        );
-
-        if (!member) {
+        const existing = await User.findById(req.params.id);
+        if (!existing) {
             return res.status(404).json({
                 success: false,
                 message: 'Member not found',
             });
         }
+
+        const member = isActive
+            ? await resumeMembership(req.params.id, 'admin')
+            : await pauseMembership(req.params.id, 'admin');
 
         res.status(200).json({
             success: true,
@@ -368,7 +369,10 @@ export const getAllRegistrations = async (req, res) => {
 
         const registrations = await Registration.find(match)
             .sort({ endDate: 1 })
-            .populate('userId', 'firstName lastName email phone')
+            .populate(
+                'userId',
+                'firstName lastName email phone isActive autoInactive lastAttendanceDate inactiveSince'
+            )
             .populate('planId', 'name price duration color');
 
         // Apply search filter on populated fields
@@ -405,6 +409,10 @@ export const getAllRegistrations = async (req, res) => {
                 status: r.status,
                 daysRemaining,
                 isExpiringSoon: daysRemaining >= 0 && daysRemaining <= 3,
+                memberActive: r.userId?.isActive,
+                autoInactive: r.userId?.autoInactive,
+                lastAttendanceDate: r.userId?.lastAttendanceDate,
+                inactiveSince: r.userId?.inactiveSince,
             };
         });
 

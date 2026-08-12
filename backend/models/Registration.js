@@ -28,8 +28,20 @@ const registrationSchema = new mongoose.Schema(
         },
         status: {
             type: String,
-            enum: ['active', 'expired', 'cancelled', 'pending'],
+            enum: ['active', 'expired', 'cancelled', 'pending', 'paused'],
             default: 'active',
+        },
+        // Set when the member's account goes inactive (no attendance, or
+        // manual admin action) so the plan clock stops counting down.
+        pausedAt: {
+            type: Date,
+            default: null,
+        },
+        // Running total of days this registration has been paused for.
+        // Added back onto endDate whenever the member becomes active again.
+        totalPausedDays: {
+            type: Number,
+            default: 0,
         },
         paymentMethod: {
             type: String,

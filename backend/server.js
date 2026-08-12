@@ -4,12 +4,14 @@ import dotenv from 'dotenv';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import connectDB from './config/database.js';
+import { startInactivityCron } from './utils/inactivityCron.js';
 
 // Import routes
 import authRoutes from './routes/authRoutes.js';
 import planRoutes from './routes/planRoutes.js';
 import registrationRoutes from './routes/registrationRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import attendanceRoutes from './routes/attendanceRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -52,6 +54,7 @@ app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/plans', planRoutes);
 app.use('/api/registrations', registrationRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/attendance', attendanceRoutes);
 
 // Health check route
 app.get('/api/health', (req, res) => {
@@ -87,6 +90,8 @@ const server = app.listen(PORT, () => {
     console.log(`✅ Server running on port ${PORT}`);
     console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
     console.log(`Frontend URL: ${process.env.FRONTEND_URL || 'http://localhost:5173'}`);
+
+    startInactivityCron();
 });
 
 // Handle unhandled promise rejections

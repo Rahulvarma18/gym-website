@@ -32,6 +32,22 @@ function StatusBadge({ status, daysRemaining }) {
         Pending
       </span>
     );
+  // Checked before the days-remaining math below: endDate is frozen while
+  // paused, so daysRemaining is stale/misleading for these rows until the
+  // member is reactivated and the backend pushes endDate forward again.
+  if (status === "paused")
+    return (
+      <span
+        title="Plan expiry is frozen while the member is inactive"
+        className="inline-flex items-center gap-1 rounded-full border border-muted-foreground/40 bg-muted px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
+      >
+        <svg width="9" height="9" viewBox="0 0 16 16" fill="currentColor">
+          <rect x="3" y="2" width="3.5" height="12" rx="1" />
+          <rect x="9.5" y="2" width="3.5" height="12" rx="1" />
+        </svg>
+        Paused
+      </span>
+    );
   if (status === "expired" || daysRemaining < 0)
     return (
       <span className="inline-flex items-center rounded-full bg-ember px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-ink">
@@ -57,6 +73,111 @@ function StatusBadge({ status, daysRemaining }) {
   );
 }
 
+function MemberStatusBadge({ active, autoInactive }) {
+  if (active)
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-emerald-700">
+        Active
+      </span>
+    );
+  return (
+    <span
+      title={autoInactive ? "Auto-deactivated for missed attendance" : "Deactivated by admin"}
+      className="inline-flex items-center gap-1 rounded-full border border-muted-foreground/40 bg-muted px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground"
+    >
+      Inactive{autoInactive ? " · No visits" : ""}
+    </span>
+  );
+}
+
+// Modern replacement for window.confirm(), styled to match AuthModal.
+function ConfirmDialog({ title, message, confirmLabel, tone = "ember", onConfirm, onCancel }) {
+  useEffect(() => {
+    const handler = (e) => e.key === "Escape" && onCancel();
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onCancel]);
+
+  const toneCls =
+    tone === "emerald"
+      ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+      : "bg-ember hover:opacity-90 text-ink";
+
+  return (
+    <div
+      className="fixed inset-0 z-[300] flex items-center justify-center p-4"
+      style={{ backgroundColor: "rgba(23,21,15,0.55)", backdropFilter: "blur(6px)" }}
+      onClick={(e) => e.target === e.currentTarget && onCancel()}
+    >
+      <div
+        className="w-full max-w-sm border border-border border-t-4 border-t-ember bg-background p-6 shadow-2xl"
+        style={{ animation: "modalIn 0.2s cubic-bezier(0.16,1,0.3,1) both" }}
+      >
+        <p className="font-display text-lg tracking-wide text-foreground">{title}</p>
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{message}</p>
+        <div className="mt-6 flex justify-end gap-2.5">
+          <button
+            id="confirm-dialog-cancel"
+            onClick={onCancel}
+            className="label-xs rounded-full border border-border px-4 py-2 text-muted-foreground hover:border-foreground/40 hover:text-foreground transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            id="confirm-dialog-confirm"
+            onClick={onConfirm}
+            className={`label-xs rounded-full px-4 py-2 transition-transform hover:scale-[1.04] ${toneCls}`}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+      <style>{`
+        @keyframes modalIn {
+          from { opacity: 0; transform: scale(0.94) translateY(12px); }
+          to   { opacity: 1; transform: scale(1)    translateY(0); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// Modern replacement for window.alert() - a dismissing toast in the corner.
+function Toast({ message, tone = "ember", onDismiss }) {
+  useEffect(() => {
+    const t = setTimeout(onDismiss, 4000);
+    return () => clearTimeout(t);
+  }, [onDismiss]);
+
+  const toneCls =
+    tone === "emerald"
+      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700"
+      : "border-ember/40 bg-ember/10 text-ember";
+
+  return (
+    <div className="fixed bottom-6 right-6 z-[300] max-w-sm" style={{ animation: "toastIn 0.25s cubic-bezier(0.16,1,0.3,1) both" }}>
+      <div className={`flex items-start gap-3 border px-4 py-3.5 shadow-2xl bg-background ${toneCls}`}>
+        <p className="flex-1 text-sm">{message}</p>
+        <button
+          onClick={onDismiss}
+          aria-label="Dismiss"
+          className="text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+            <path d="M12 4L4 12M4 4l8 8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+        </button>
+      </div>
+      <style>{`
+        @keyframes toastIn {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
 export default function AdminPage({ onClose }) {
   const { token, user } = useAuth();
   const [registrations, setRegistrations] = useState([]);
@@ -68,6 +189,10 @@ export default function AdminPage({ onClose }) {
   const [filterPlan, setFilterPlan] = useState("");
   const [tab, setTab] = useState("all"); // "all" | "pending" | "expiring"
   const [activatingId, setActivatingId] = useState(null);
+  const [markingId, setMarkingId] = useState(null);
+  const [togglingId, setTogglingId] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null); // { userId, nextActive } | null
+  const [toast, setToast] = useState(null); // { message, tone } | null
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -104,11 +229,67 @@ export default function AdminPage({ onClose }) {
       const data = await res.json();
       if (!data.success) throw new Error(data.message || "Activation failed");
       await fetchData();
+      setToast({ message: "Payment confirmed and plan activated.", tone: "emerald" });
     } catch (err) {
-      alert(err.message || "Failed to activate registration");
+      setToast({ message: err.message || "Failed to activate registration", tone: "ember" });
     } finally {
       setActivatingId(null);
     }
+  }
+
+  async function handleMarkPresent(userId) {
+    setMarkingId(userId);
+    try {
+      const res = await fetch(`${API}/attendance/mark/${userId}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || "Failed to mark attendance");
+      await fetchData();
+      setToast({ message: "Marked present for today.", tone: "emerald" });
+    } catch (err) {
+      setToast({ message: err.message || "Failed to mark attendance", tone: "ember" });
+    } finally {
+      setMarkingId(null);
+    }
+  }
+
+  async function updateMemberStatus(userId, nextActive) {
+    setTogglingId(userId);
+    try {
+      const res = await fetch(`${API}/admin/members/${userId}/status`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ isActive: nextActive }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || "Failed to update status");
+      await fetchData();
+      setToast({
+        message: nextActive ? "Member reactivated." : "Member deactivated. Their plan is now paused.",
+        tone: nextActive ? "emerald" : "ember",
+      });
+    } catch (err) {
+      setToast({ message: err.message || "Failed to update member status", tone: "ember" });
+    } finally {
+      setTogglingId(null);
+    }
+  }
+
+  function handleToggleActive(userId, nextActive) {
+    if (!nextActive) {
+      // Deactivating pauses the plan - confirm via a modal instead of window.confirm().
+      setConfirmDialog({ userId, nextActive });
+      return;
+    }
+    updateMemberStatus(userId, nextActive);
   }
 
   // Unique plan names for filter dropdown
@@ -178,7 +359,7 @@ export default function AdminPage({ onClose }) {
                   {user.email}
                 </p>
               </div>
-              <span className="bg-brass px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-widest text-ink">
+              <span className="border border-border px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-widest text-foreground">
                 Admin
               </span>
             </div>
@@ -202,8 +383,8 @@ export default function AdminPage({ onClose }) {
           <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
             {[
               { label: "Total Members", value: stats.totalUsers, color: "text-foreground" },
-              { label: "Pending Approvals", value: pendingCount, color: "text-brass" },
-              { label: "Expiring Soon", value: expiringCount, color: "text-ember" },
+              { label: "Pending Approvals", value: pendingCount, color: "text-foreground" },
+              { label: "Expiring Soon", value: expiringCount, color: "text-foreground" },
               { label: "Total Revenue", value: `₹${(stats.totalRevenue || 0).toLocaleString("en-IN")}`, color: "text-foreground" },
             ].map((s) => (
               <div
@@ -268,6 +449,7 @@ export default function AdminPage({ onClose }) {
             <option value="">All Statuses</option>
             <option value="pending">Pending</option>
             <option value="active">Active</option>
+            <option value="paused">Paused</option>
             <option value="expired">Expired</option>
             <option value="cancelled">Cancelled</option>
           </select>
@@ -321,7 +503,7 @@ export default function AdminPage({ onClose }) {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-secondary">
-                    {["Member", "Phone", "Plan", "Pricing / Price", "Requested Date", "Status", "Action"].map((h) => (
+                    {["Member", "Phone", "Plan", "Pricing / Price", "Requested Date", "Status", "Attendance", "Action"].map((h) => (
                       <th
                         key={h}
                         className="px-5 py-3.5 text-left font-mono text-[10px] uppercase tracking-widest text-muted-foreground"
@@ -352,10 +534,7 @@ export default function AdminPage({ onClose }) {
                       </td>
                       <td className="px-5 py-4 font-mono text-xs text-foreground">{r.phone || "—"}</td>
                       <td className="px-5 py-4">
-                        <span
-                          className="inline-block rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-ink"
-                          style={{ backgroundColor: r.planColor || "#c89b3c" }}
-                        >
+                        <span className="inline-block rounded-full border border-border px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-foreground">
                           {r.planName}
                         </span>
                       </td>
@@ -367,6 +546,43 @@ export default function AdminPage({ onClose }) {
                       </td>
                       <td className="px-5 py-4">
                         <StatusBadge status={r.status} daysRemaining={r.daysRemaining} />
+                      </td>
+                      <td className="px-5 py-4">
+                        {r.userId ? (
+                          <div className="flex flex-col items-start gap-1.5">
+                            <MemberStatusBadge active={r.memberActive} autoInactive={r.autoInactive} />
+                            <p className="text-[10px] font-mono text-muted-foreground">
+                              Last visit: {fmt(r.lastAttendanceDate)}
+                            </p>
+                            <div className="flex items-center gap-2">
+                              <button
+                                id={`mark-present-btn-${r.userId}`}
+                                disabled={markingId === r.userId}
+                                onClick={() => handleMarkPresent(r.userId)}
+                                className="label-xs rounded-full border border-border px-2.5 py-1 text-[10px] text-muted-foreground transition-colors hover:border-emerald-500 hover:text-emerald-700 disabled:opacity-50"
+                              >
+                                {markingId === r.userId ? "Marking..." : "Mark Present"}
+                              </button>
+                              <button
+                                id={`toggle-active-btn-${r.userId}`}
+                                disabled={togglingId === r.userId}
+                                onClick={() => handleToggleActive(r.userId, !r.memberActive)}
+                                className={`label-xs rounded-full border px-2.5 py-1 text-[10px] transition-colors disabled:opacity-50 ${r.memberActive
+                                  ? "border-border text-muted-foreground hover:border-ember hover:text-ember"
+                                  : "border-emerald-500/40 text-emerald-700 hover:bg-emerald-500/10"
+                                  }`}
+                              >
+                                {togglingId === r.userId
+                                  ? "Updating..."
+                                  : r.memberActive
+                                    ? "Deactivate"
+                                    : "Reactivate"}
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-xs font-mono text-muted-foreground/60">—</span>
+                        )}
                       </td>
                       <td className="px-5 py-4">
                         {r.status === "pending" ? (
@@ -426,10 +642,7 @@ export default function AdminPage({ onClose }) {
                     <StatusBadge status={r.status} daysRemaining={r.daysRemaining} />
                   </div>
                   <div className="flex items-center justify-between gap-2 mb-3">
-                    <span
-                      className="rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-ink"
-                      style={{ backgroundColor: r.planColor || "#c89b3c" }}
-                    >
+                    <span className="rounded-full border border-border px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-foreground">
                       {r.planName}
                     </span>
                     <span className="font-mono text-xs font-semibold text-foreground">
@@ -446,6 +659,39 @@ export default function AdminPage({ onClose }) {
                       <p className={r.isExpiringSoon ? "text-ember" : "text-foreground"}>{fmt(r.endDate)}</p>
                     </div>
                   </div>
+                  {r.userId && (
+                    <div className="mb-3 flex flex-col gap-2 border-t border-border/60 pt-3">
+                      <div className="flex items-center justify-between">
+                        <MemberStatusBadge active={r.memberActive} autoInactive={r.autoInactive} />
+                        <p className="text-[10px] font-mono text-muted-foreground">
+                          Last visit: {fmt(r.lastAttendanceDate)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          disabled={markingId === r.userId}
+                          onClick={() => handleMarkPresent(r.userId)}
+                          className="flex-1 label-xs rounded-full border border-border py-1.5 text-[10px] text-muted-foreground transition-colors hover:border-emerald-500 hover:text-emerald-700 disabled:opacity-50"
+                        >
+                          {markingId === r.userId ? "Marking..." : "Mark Present"}
+                        </button>
+                        <button
+                          disabled={togglingId === r.userId}
+                          onClick={() => handleToggleActive(r.userId, !r.memberActive)}
+                          className={`flex-1 label-xs rounded-full border py-1.5 text-[10px] transition-colors disabled:opacity-50 ${r.memberActive
+                            ? "border-border text-muted-foreground hover:border-ember hover:text-ember"
+                            : "border-emerald-500/40 text-emerald-700 hover:bg-emerald-500/10"
+                            }`}
+                        >
+                          {togglingId === r.userId
+                            ? "Updating..."
+                            : r.memberActive
+                              ? "Deactivate"
+                              : "Reactivate"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   {r.status === "pending" ? (
                     <button
                       disabled={activatingId === r.registrationId}
@@ -475,6 +721,23 @@ export default function AdminPage({ onClose }) {
           </>
         )}
       </div>
+
+      {confirmDialog && (
+        <ConfirmDialog
+          title="Deactivate member?"
+          message="Their plan's expiry will be paused until they're reactivated or they check in again."
+          confirmLabel="Deactivate"
+          tone="ember"
+          onCancel={() => setConfirmDialog(null)}
+          onConfirm={() => {
+            const { userId, nextActive } = confirmDialog;
+            setConfirmDialog(null);
+            updateMemberStatus(userId, nextActive);
+          }}
+        />
+      )}
+
+      {toast && <Toast message={toast.message} tone={toast.tone} onDismiss={() => setToast(null)} />}
     </div>
   );
 }

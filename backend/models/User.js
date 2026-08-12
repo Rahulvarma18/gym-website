@@ -87,6 +87,25 @@ const userSchema = new mongoose.Schema(
             type: Boolean,
             default: true,
         },
+        // Set automatically by the attendance cron job when a member misses
+        // too many consecutive days at the gym. Kept separate from a manual
+        // admin deactivation so we know whether attending again should
+        // auto-reactivate the account.
+        autoInactive: {
+            type: Boolean,
+            default: false,
+        },
+        // When the member became inactive (manually or automatically).
+        // Used to work out how many days to add back to a paused plan.
+        inactiveSince: {
+            type: Date,
+            default: null,
+        },
+        // Most recent gym check-in date, used to detect inactivity.
+        lastAttendanceDate: {
+            type: Date,
+            default: null,
+        },
         lastLogin: {
             type: Date,
             default: null,
