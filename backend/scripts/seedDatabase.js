@@ -116,7 +116,7 @@ const samplePlans = [
 const sampleAdmin = {
     firstName: 'Admin',
     lastName: 'User',
-    email: 'admin@ironworks.com',
+    email: 'admin@jayramfitness.com',
     phone: '9999999999',
     password: 'Admin@123',
     isAdmin: true,

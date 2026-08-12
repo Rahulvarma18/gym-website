@@ -16,7 +16,7 @@ function waLink(phone, name, planName, expiryDate) {
   const num = phone?.replace(/\D/g, "");
   const intl = num?.startsWith("91") ? num : `91${num}`;
   const msg = encodeURIComponent(
-    `Hi ${name}!\n\nThis is a reminder from *IronWorks Gym*.\n\nYour *${planName}* plan is expiring on *${fmt(expiryDate)}*.\n\nRenew now to keep your training active!\n\nReply to this message or visit us at the gym.`
+    `Hi ${name}!\n\nThis is a reminder from *Jayram Fitness*.\n\nYour *${planName}* plan is expiring on *${fmt(expiryDate)}*.\n\nRenew now to keep your training active!\n\nReply to this message or visit us at the gym.`
   );
   return `https://wa.me/${intl}?text=${msg}`;
 }
@@ -353,7 +353,7 @@ export default function AdminPage({ onClose }) {
             <div className="flex items-center gap-3">
               <div>
                 <p className="font-display text-xl tracking-wide text-foreground">
-                  IRON<span className="text-ember">WORKS</span>
+                  JAYRAM<span className="text-ember">FITNESS</span>
                 </p>
                 <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
                   {user.email}

@@ -96,7 +96,7 @@ export default function AuthModal({ mode: initialMode, onClose }) {
         <div className="flex justify-center">
           <div className="rounded-b-2xl bg-secondary px-8 py-2.5 shadow-[0_1px_0_var(--color-border)]">
             <span className="font-display text-lg tracking-[0.2em] text-foreground">
-              IRON<span className="text-ember">WORKS</span>
+              JAYRAM<span className="text-ember">FITNESS</span>
             </span>
           </div>
         </div>
@@ -110,8 +110,8 @@ export default function AuthModal({ mode: initialMode, onClose }) {
                 id={`auth-tab-${m}`}
                 onClick={() => switchMode(m)}
                 className={`label-xs flex-1 rounded-full py-2.5 transition-all ${mode === m
-                    ? "bg-primary text-primary-foreground shadow"
-                    : "text-muted-foreground hover:text-foreground"
+                  ? "bg-primary text-primary-foreground shadow"
+                  : "text-muted-foreground hover:text-foreground"
                   }`}
               >
                 {m === "login" ? "Log In" : "Sign Up"}

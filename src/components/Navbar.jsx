@@ -53,7 +53,7 @@ export default function Navbar({ onAdminClick, onOpenAuth }) {
               className="flex items-center rounded-b-3xl bg-secondary px-12 py-3 shadow-[0_1px_0_var(--color-border)]"
             >
               <span className="font-display text-xl font-semibold tracking-[0.32em]">
-                IRON<span className="text-ember">WORKS</span>
+                JAYRAM<span className="text-ember">FITNESS</span>
               </span>
             </Link>
 
@@ -110,7 +110,7 @@ export default function Navbar({ onAdminClick, onOpenAuth }) {
               to="/"
               className="flex items-center rounded-full bg-secondary px-4 py-2 text-sm font-semibold tracking-wide"
             >
-              IRON<span className="text-ember">WORKS</span>
+              JAYRAM<span className="text-ember">FITNESS</span>
             </Link>
 
             <div className="flex items-center gap-2">

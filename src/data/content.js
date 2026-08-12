@@ -244,7 +244,7 @@ export const recoveryPillars = [
 export const contactInfo = {
   address: ["Main Road, Kakinada", "Andhra Pradesh 533001"],
   phone: "+91 98765 43210",
-  email: "hello@ironworks.gym",
+  email: "hello@jayramfitness.com",
   hours: [
     { day: "Mon – Sat", time: "5:00a – 10:00p" },
     { day: "Sunday", time: "6:00a – 12:00p" },

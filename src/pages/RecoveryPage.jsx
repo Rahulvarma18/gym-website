@@ -147,7 +147,7 @@ export default function RecoveryPage() {
                                 onClick={() => onOpenAuth?.("signup")}
                                 className="label-xs flex shrink-0 items-center gap-2 rounded-full bg-primary-foreground px-6 py-4 text-primary transition-transform hover:scale-[1.04]"
                             >
-                                Join Ironworks
+                                Join Jayram Fitness
                                 <ArrowRight className="size-4" />
                             </button>
                         </div>

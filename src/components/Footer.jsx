@@ -18,7 +18,7 @@ export default function Footer() {
               </Link>
             ))}
           </nav>
-          <span className="text-xs text-foreground/40">© 2026 Ironworks</span>
+          <span className="text-xs text-foreground/40">© 2026 Jayram Fitness</span>
         </div>
       </div>
     </footer>
