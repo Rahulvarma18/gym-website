@@ -178,9 +178,395 @@ function Toast({ message, tone = "ember", onDismiss }) {
   );
 }
 
+function formatPlanPeriod(duration) {
+  if (!duration) return "";
+  const { value, unit } = duration;
+  if (unit === "days") return value === 7 ? "/week" : `/${value}d`;
+  if (unit === "years") return value === 1 ? "/year" : `/${value}yr`;
+  return value === 1 ? "/month" : `/${value}mo`;
+}
+
+function PlansPanel({ plans, onSave, onError, onRequestDelete }) {
+  const [formOpen, setFormOpen] = useState(false);
+  const [editingPlan, setEditingPlan] = useState(null); // null = create mode
+
+  const sorted = [...plans].sort((a, b) => (a.price || 0) - (b.price || 0));
+
+  return (
+    <div>
+      <div className="mb-5 flex items-center justify-between">
+        <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+          {plans.length} {plans.length === 1 ? "plan" : "plans"} live on the pricing page
+        </p>
+        <button
+          id="admin-add-plan-btn"
+          onClick={() => { setEditingPlan(null); setFormOpen(true); }}
+          className="label-xs rounded-full bg-ember px-4 py-2 text-ink transition-transform hover:scale-[1.04]"
+        >
+          + Add Plan
+        </button>
+      </div>
+
+      {sorted.length === 0 ? (
+        <div className="border border-border bg-secondary px-6 py-16 text-center">
+          <p className="font-mono text-sm uppercase tracking-widest text-muted-foreground">
+            No plans yet — add one to show it on the pricing page
+          </p>
+        </div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {sorted.map((p) => (
+            <div key={p._id} className="flex flex-col border border-border bg-secondary p-5">
+              {p.badge && (
+                <span className="mb-3 inline-block w-fit bg-ember px-2.5 py-1 font-mono text-[10px] uppercase tracking-widest text-ink">
+                  {p.badge}
+                </span>
+              )}
+              <h4 className="font-display text-lg uppercase text-foreground">{p.name}</h4>
+              <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{p.description}</p>
+              <div className="mt-4 flex items-baseline gap-2">
+                {p.discountPrice ? (
+                  <>
+                    <span className="font-display text-2xl text-foreground">
+                      ₹{p.discountPrice.toLocaleString("en-IN")}
+                    </span>
+                    <span className="font-mono text-xs text-muted-foreground line-through">
+                      ₹{p.price.toLocaleString("en-IN")}
+                    </span>
+                  </>
+                ) : (
+                  <span className="font-display text-2xl text-foreground">
+                    ₹{(p.price || 0).toLocaleString("en-IN")}
+                  </span>
+                )}
+                <span className="font-mono text-xs text-muted-foreground">{formatPlanPeriod(p.duration)}</span>
+              </div>
+              <p className="mt-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                {(p.features || []).length} feature{(p.features || []).length === 1 ? "" : "s"}
+              </p>
+              <div className="mt-4 flex gap-2">
+                <button
+                  onClick={() => { setEditingPlan(p); setFormOpen(true); }}
+                  className="label-xs flex-1 rounded-full border border-border py-2 text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => onRequestDelete(p)}
+                  className="label-xs flex-1 rounded-full border border-ember/40 py-2 text-ember transition-colors hover:bg-ember/10"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {formOpen && (
+        <PlanFormModal
+          plan={editingPlan}
+          onClose={() => setFormOpen(false)}
+          onSave={async (payload) => {
+            try {
+              await onSave(editingPlan?._id || null, payload);
+              setFormOpen(false);
+            } catch (err) {
+              onError(err.message || "Failed to save plan");
+            }
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function PlanFormModal({ plan, onClose, onSave }) {
+  const isEdit = Boolean(plan);
+  const [name, setName] = useState(plan?.name || "");
+  const [description, setDescription] = useState(plan?.description || "");
+  const [price, setPrice] = useState(plan?.price ?? "");
+  const [discountPrice, setDiscountPrice] = useState(plan?.discountPrice ?? "");
+  const [durationValue, setDurationValue] = useState(plan?.duration?.value ?? 1);
+  const [durationUnit, setDurationUnit] = useState(plan?.duration?.unit || "months");
+  const [badge, setBadge] = useState(plan?.badge || "");
+  const [featuresText, setFeaturesText] = useState((plan?.features || []).join("\n"));
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState("");
+
+  useEffect(() => {
+    const handler = (e) => e.key === "Escape" && !saving && onClose();
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose, saving]);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setFormError("");
+
+    if (!name.trim() || !description.trim() || price === "" || Number(price) < 0) {
+      setFormError("Name, description, and a valid price are required.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await onSave({
+        name: name.trim(),
+        description: description.trim(),
+        price: Number(price),
+        discountPrice: discountPrice === "" ? null : Number(discountPrice),
+        duration: { value: Number(durationValue) || 1, unit: durationUnit },
+        badge: badge.trim() || null,
+        features: featuresText
+          .split("\n")
+          .map((f) => f.trim())
+          .filter(Boolean),
+      });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[300] flex items-center justify-center p-4 overflow-y-auto"
+      style={{ backgroundColor: "rgba(23,21,15,0.55)", backdropFilter: "blur(6px)" }}
+      onClick={(e) => e.target === e.currentTarget && !saving && onClose()}
+    >
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-md border border-border border-t-4 border-t-ember bg-background p-6 shadow-2xl my-8"
+      >
+        <p className="font-display text-lg tracking-wide text-foreground">
+          {isEdit ? `Edit "${plan.name}"` : "Add a new plan"}
+        </p>
+
+        {formError && (
+          <p className="mt-3 border border-ember/30 bg-ember/10 px-3 py-2 text-xs text-ember">{formError}</p>
+        )}
+
+        <div className="mt-4 space-y-3">
+          <div>
+            <label className="mb-1 block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              Plan name
+            </label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Weekly"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-ember focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              Description
+            </label>
+            <input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Short one-liner shown under the name"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-ember focus:outline-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                Price (₹)
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-ember focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                Discount price (optional)
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={discountPrice}
+                onChange={(e) => setDiscountPrice(e.target.value)}
+                placeholder="Leave blank"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-ember focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="mb-1 block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                Duration
+              </label>
+              <input
+                type="number"
+                min="1"
+                value={durationValue}
+                onChange={(e) => setDurationValue(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-ember focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                Unit
+              </label>
+              <select
+                value={durationUnit}
+                onChange={(e) => setDurationUnit(e.target.value)}
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-ember focus:outline-none"
+              >
+                <option value="days">Days</option>
+                <option value="months">Months</option>
+                <option value="years">Years</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              Badge (optional)
+            </label>
+            <input
+              value={badge}
+              onChange={(e) => setBadge(e.target.value)}
+              placeholder="e.g. POPULAR — shows a highlighted tag"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-ember focus:outline-none"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              Features (one per line)
+            </label>
+            <textarea
+              rows={4}
+              value={featuresText}
+              onChange={(e) => setFeaturesText(e.target.value)}
+              placeholder={"Full gym access\nLocker room\nGroup classes"}
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-ember focus:outline-none"
+            />
+          </div>
+        </div>
+
+        <div className="mt-6 flex justify-end gap-2.5">
+          <button
+            type="button"
+            disabled={saving}
+            onClick={onClose}
+            className="label-xs rounded-full border border-border px-4 py-2 text-muted-foreground hover:border-foreground/40 hover:text-foreground transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            className="label-xs rounded-full bg-ember px-4 py-2 text-ink transition-transform hover:scale-[1.04] disabled:opacity-50"
+          >
+            {saving ? "Saving..." : isEdit ? "Save changes" : "Create plan"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function timeAgo(dateStr) {
+  const diffMs = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
+}
+
+function MessagesPanel({ messages, onMarkRead, onRequestDelete }) {
+  if (messages.length === 0) {
+    return (
+      <div className="border border-border bg-secondary px-6 py-16 text-center">
+        <p className="font-mono text-sm uppercase tracking-widest text-muted-foreground">
+          No messages yet — submissions from the Contact form will show up here
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {messages.map((m) => (
+        <div
+          key={m._id}
+          className={`border p-5 ${m.status === "new" ? "border-ember/40 bg-ember/5" : "border-border bg-secondary"
+            }`}
+        >
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <div className="flex items-center gap-2">
+                <p className="font-display text-base text-foreground">{m.name}</p>
+                {m.status === "new" && (
+                  <span className="rounded-full bg-ember px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-ink">
+                    New
+                  </span>
+                )}
+              </div>
+              <p className="font-mono text-xs text-muted-foreground">{m.email}</p>
+            </div>
+            <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              {timeAgo(m.createdAt)}
+            </p>
+          </div>
+
+          {m.interest && (
+            <p className="mt-3 font-mono text-[10px] uppercase tracking-widest text-brass">
+              Interested in: {m.interest}
+            </p>
+          )}
+          {m.message && (
+            <p className="mt-2 whitespace-pre-wrap text-sm text-foreground/90">{m.message}</p>
+          )}
+
+          <div className="mt-4 flex gap-2">
+            <a
+              href={`mailto:${m.email}`}
+              className="label-xs rounded-full border border-border px-3.5 py-1.5 text-muted-foreground transition-colors hover:border-foreground/40 hover:text-foreground"
+            >
+              Reply by email
+            </a>
+            {m.status === "new" && (
+              <button
+                onClick={() => onMarkRead(m._id)}
+                className="label-xs rounded-full border border-border px-3.5 py-1.5 text-muted-foreground transition-colors hover:border-emerald-500 hover:text-emerald-700"
+              >
+                Mark as read
+              </button>
+            )}
+            <button
+              onClick={() => onRequestDelete(m)}
+              className="label-xs rounded-full border border-ember/40 px-3.5 py-1.5 text-ember transition-colors hover:bg-ember/10"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function AdminPage({ onClose }) {
   const { token, user } = useAuth();
   const [registrations, setRegistrations] = useState([]);
+  const [plans, setPlans] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -191,7 +577,7 @@ export default function AdminPage({ onClose }) {
   const [activatingId, setActivatingId] = useState(null);
   const [markingId, setMarkingId] = useState(null);
   const [togglingId, setTogglingId] = useState(null);
-  const [confirmDialog, setConfirmDialog] = useState(null); // { userId, nextActive } | null
+  const [confirmDialog, setConfirmDialog] = useState(null); // { kind: 'deactivate-member', userId, nextActive } | { kind: 'delete-plan', planId, planName } | null
   const [toast, setToast] = useState(null); // { message, tone } | null
 
   const fetchData = useCallback(async () => {
@@ -199,15 +585,22 @@ export default function AdminPage({ onClose }) {
     setError("");
     try {
       const headers = { Authorization: `Bearer ${token}` };
-      const [regRes, dashRes] = await Promise.all([
+      const [regRes, dashRes, plansRes, messagesRes] = await Promise.all([
         fetch(`${API}/admin/registrations`, { headers }),
         fetch(`${API}/admin/dashboard`, { headers }),
+        fetch(`${API}/plans`, { headers }),
+        fetch(`${API}/contact`, { headers }),
       ]);
       const regData = await regRes.json();
       const dashData = await dashRes.json();
+      const plansData = await plansRes.json();
+      const messagesData = await messagesRes.json();
       if (!regData.success) throw new Error(regData.message);
       setRegistrations(regData.registrations || []);
       setStats(dashData.stats || null);
+      setPlans(plansData.plans || []);
+      setMessages(messagesData.messages || []);
+      setUnreadCount(messagesData.unreadCount || 0);
     } catch (e) {
       setError(e.message || "Failed to load data");
     } finally {
@@ -286,10 +679,70 @@ export default function AdminPage({ onClose }) {
   function handleToggleActive(userId, nextActive) {
     if (!nextActive) {
       // Deactivating pauses the plan - confirm via a modal instead of window.confirm().
-      setConfirmDialog({ userId, nextActive });
+      setConfirmDialog({ kind: "deactivate-member", userId, nextActive });
       return;
     }
     updateMemberStatus(userId, nextActive);
+  }
+
+  async function handleSavePlan(planId, payload) {
+    const isEdit = Boolean(planId);
+    const res = await fetch(`${API}/plans${isEdit ? `/${planId}` : ""}`, {
+      method: isEdit ? "PUT" : "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.message || "Failed to save plan");
+    await fetchData();
+    setToast({ message: isEdit ? "Plan updated." : "Plan created.", tone: "emerald" });
+  }
+
+  async function handleDeletePlan(planId) {
+    try {
+      const res = await fetch(`${API}/plans/${planId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || "Failed to delete plan");
+      await fetchData();
+      setToast({ message: "Plan removed from the pricing page.", tone: "emerald" });
+    } catch (err) {
+      setToast({ message: err.message || "Failed to delete plan", tone: "ember" });
+    }
+  }
+
+  async function handleMarkMessageRead(messageId) {
+    try {
+      const res = await fetch(`${API}/contact/${messageId}/read`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || "Failed to update message");
+      await fetchData();
+    } catch (err) {
+      setToast({ message: err.message || "Failed to update message", tone: "ember" });
+    }
+  }
+
+  async function handleDeleteMessage(messageId) {
+    try {
+      const res = await fetch(`${API}/contact/${messageId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || "Failed to delete message");
+      await fetchData();
+      setToast({ message: "Message deleted.", tone: "emerald" });
+    } catch (err) {
+      setToast({ message: err.message || "Failed to delete message", tone: "ember" });
+    }
   }
 
   // Unique plan names for filter dropdown
@@ -405,6 +858,8 @@ export default function AdminPage({ onClose }) {
               { key: "all", label: "All Members", activeCls: "bg-primary text-primary-foreground" },
               { key: "pending", label: `Pending Approvals${pendingCount > 0 ? ` (${pendingCount})` : ""}`, activeCls: "bg-brass text-ink" },
               { key: "expiring", label: `Expiring Soon${expiringCount > 0 ? ` (${expiringCount})` : ""}`, activeCls: "bg-ember text-ink" },
+              { key: "plans", label: "Plans & Pricing", activeCls: "bg-primary text-primary-foreground" },
+              { key: "messages", label: `Messages${unreadCount > 0 ? ` (${unreadCount})` : ""}`, activeCls: "bg-brass text-ink" },
             ].map((t) => (
               <button
                 key={t.key}
@@ -420,52 +875,73 @@ export default function AdminPage({ onClose }) {
         </div>
 
         {/* Filters */}
-        <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center">
-          <input
-            id="admin-search"
-            type="text"
-            placeholder="Search by name, email, phone…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground/60 focus:border-ember focus:outline-none transition-colors"
-          />
-          <select
-            id="admin-filter-plan"
-            value={filterPlan}
-            onChange={(e) => setFilterPlan(e.target.value)}
-            className="rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:border-ember focus:outline-none transition-colors"
-          >
-            <option value="">All Plans</option>
-            {planNames.map((p) => (
-              <option key={p} value={p}>{p}</option>
-            ))}
-          </select>
-          <select
-            id="admin-filter-status"
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:border-ember focus:outline-none transition-colors"
-          >
-            <option value="">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="active">Active</option>
-            <option value="paused">Paused</option>
-            <option value="expired">Expired</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-          {(search || filterStatus || filterPlan) && (
-            <button
-              id="admin-clear-filters"
-              onClick={() => { setSearch(""); setFilterStatus(""); setFilterPlan(""); }}
-              className="label-xs rounded-full border border-border px-4 py-2.5 text-muted-foreground hover:border-ember hover:text-ember transition-colors"
+        {tab !== "plans" && tab !== "messages" && (
+          <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center">
+            <input
+              id="admin-search"
+              type="text"
+              placeholder="Search by name, email, phone…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="flex-1 rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground/60 focus:border-ember focus:outline-none transition-colors"
+            />
+            <select
+              id="admin-filter-plan"
+              value={filterPlan}
+              onChange={(e) => setFilterPlan(e.target.value)}
+              className="rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:border-ember focus:outline-none transition-colors"
             >
-              Clear
-            </button>
-          )}
-        </div>
+              <option value="">All Plans</option>
+              {planNames.map((p) => (
+                <option key={p} value={p}>{p}</option>
+              ))}
+            </select>
+            <select
+              id="admin-filter-status"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="rounded-lg border border-border bg-background px-4 py-2.5 text-sm text-foreground focus:border-ember focus:outline-none transition-colors"
+            >
+              <option value="">All Statuses</option>
+              <option value="pending">Pending</option>
+              <option value="active">Active</option>
+              <option value="paused">Paused</option>
+              <option value="expired">Expired</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            {(search || filterStatus || filterPlan) && (
+              <button
+                id="admin-clear-filters"
+                onClick={() => { setSearch(""); setFilterStatus(""); setFilterPlan(""); }}
+                className="label-xs rounded-full border border-border px-4 py-2.5 text-muted-foreground hover:border-ember hover:text-ember transition-colors"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Plans & Pricing panel */}
+        {tab === "plans" && (
+          <PlansPanel
+            plans={plans}
+            onSave={handleSavePlan}
+            onError={(message) => setToast({ message, tone: "ember" })}
+            onRequestDelete={(plan) => setConfirmDialog({ kind: "delete-plan", planId: plan._id, planName: plan.name })}
+          />
+        )}
+
+        {/* Messages inbox */}
+        {tab === "messages" && (
+          <MessagesPanel
+            messages={messages}
+            onMarkRead={handleMarkMessageRead}
+            onRequestDelete={(msg) => setConfirmDialog({ kind: "delete-message", messageId: msg._id, name: msg.name })}
+          />
+        )}
 
         {/* Content */}
-        {loading ? (
+        {tab === "plans" || tab === "messages" ? null : loading ? (
           <div className="flex items-center justify-center py-24">
             <div className="flex flex-col items-center gap-4">
               <div className="h-10 w-10 rounded-full border-2 border-border border-t-ember animate-spin" />
@@ -722,7 +1198,7 @@ export default function AdminPage({ onClose }) {
         )}
       </div>
 
-      {confirmDialog && (
+      {confirmDialog?.kind === "deactivate-member" && (
         <ConfirmDialog
           title="Deactivate member?"
           message="Their plan's expiry will be paused until they're reactivated or they check in again."
@@ -733,6 +1209,36 @@ export default function AdminPage({ onClose }) {
             const { userId, nextActive } = confirmDialog;
             setConfirmDialog(null);
             updateMemberStatus(userId, nextActive);
+          }}
+        />
+      )}
+
+      {confirmDialog?.kind === "delete-plan" && (
+        <ConfirmDialog
+          title="Delete this plan?"
+          message={`"${confirmDialog.planName}" will be hidden from the public pricing page immediately. Members already on it are not affected.`}
+          confirmLabel="Delete"
+          tone="ember"
+          onCancel={() => setConfirmDialog(null)}
+          onConfirm={() => {
+            const { planId } = confirmDialog;
+            setConfirmDialog(null);
+            handleDeletePlan(planId);
+          }}
+        />
+      )}
+
+      {confirmDialog?.kind === "delete-message" && (
+        <ConfirmDialog
+          title="Delete this message?"
+          message={`The message from "${confirmDialog.name}" will be permanently removed. This can't be undone.`}
+          confirmLabel="Delete"
+          tone="ember"
+          onCancel={() => setConfirmDialog(null)}
+          onConfirm={() => {
+            const { messageId } = confirmDialog;
+            setConfirmDialog(null);
+            handleDeleteMessage(messageId);
           }}
         />
       )}

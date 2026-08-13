@@ -2,18 +2,39 @@ import { useState } from "react";
 import { contactInfo } from "../data/content";
 import Reveal from "./Reveal";
 
+const API = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+
 export default function Contact() {
   const [form, setForm] = useState({ name: "", email: "", interest: contactInfo.interests[0], message: "" });
+  const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
+  const [error, setError] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSent(true);
+    setSending(true);
+    setError("");
+    try {
+      const res = await fetch(`${API}/contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || "Failed to send message");
+
+      setSent(true);
+      setForm({ name: "", email: "", interest: contactInfo.interests[0], message: "" });
+    } catch (err) {
+      setError(err.message || "Couldn't send your message — please try again.");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -140,14 +161,21 @@ export default function Contact() {
 
             <button
               type="submit"
-              className="w-full border border-ember bg-ember px-6 py-3 font-mono text-xs uppercase tracking-widest text-ink transition-colors hover:bg-transparent hover:text-ember sm:w-auto"
+              disabled={sending}
+              className="w-full border border-ember bg-ember px-6 py-3 font-mono text-xs uppercase tracking-widest text-ink transition-colors hover:bg-transparent hover:text-ember disabled:opacity-50 sm:w-auto"
             >
-              Send message
+              {sending ? "Sending..." : "Send message"}
             </button>
 
             {sent && (
               <p className="font-mono text-xs uppercase tracking-widest text-brass">
                 Message received. We'll be in touch shortly.
+              </p>
+            )}
+
+            {error && (
+              <p className="font-mono text-xs uppercase tracking-widest text-ember">
+                {error}
               </p>
             )}
           </form>
