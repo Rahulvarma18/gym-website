@@ -716,6 +716,21 @@ export default function AdminPage({ onClose }) {
     }
   }
 
+  async function handleRejectRegistration(regId) {
+    try {
+      const res = await fetch(`${API}/registrations/${regId}/cancel`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.message || "Failed to reject request");
+      await fetchData();
+      setToast({ message: "Plan request rejected.", tone: "emerald" });
+    } catch (err) {
+      setToast({ message: err.message || "Failed to reject request", tone: "ember" });
+    }
+  }
+
   async function handleMarkMessageRead(messageId) {
     try {
       const res = await fetch(`${API}/contact/${messageId}/read`, {
@@ -1062,16 +1077,25 @@ export default function AdminPage({ onClose }) {
                       </td>
                       <td className="px-5 py-4">
                         {r.status === "pending" ? (
-                          <button
-                            id={`activate-btn-${r.registrationId}`}
-                            disabled={activatingId === r.registrationId}
-                            onClick={() => handleActivate(r.registrationId)}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-brass px-3.5 py-1.5 font-mono text-[10px] font-bold uppercase tracking-widest text-ink transition-transform hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
-                          >
-                            {activatingId === r.registrationId
-                              ? "Activating..."
-                              : "✓ Confirm Payment & Activate"}
-                          </button>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <button
+                              id={`activate-btn-${r.registrationId}`}
+                              disabled={activatingId === r.registrationId}
+                              onClick={() => handleActivate(r.registrationId)}
+                              className="inline-flex items-center gap-1.5 rounded-full bg-brass px-3.5 py-1.5 font-mono text-[10px] font-bold uppercase tracking-widest text-ink transition-transform hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
+                            >
+                              {activatingId === r.registrationId
+                                ? "Activating..."
+                                : "✓ Confirm Payment & Activate"}
+                            </button>
+                            <button
+                              id={`reject-btn-${r.registrationId}`}
+                              onClick={() => setConfirmDialog({ kind: "reject-registration", regId: r.registrationId, name: r.firstName, planName: r.planName })}
+                              className="inline-flex items-center gap-1.5 rounded-full border border-ember/40 px-3.5 py-1.5 font-mono text-[10px] font-bold uppercase tracking-widest text-ember transition-colors hover:bg-ember/10"
+                            >
+                              ✕ Reject
+                            </button>
+                          </div>
                         ) : r.isExpiringSoon && r.status === "active" && r.phone ? (
                           <a
                             id={`wa-btn-${r.registrationId}`}
@@ -1169,15 +1193,23 @@ export default function AdminPage({ onClose }) {
                     </div>
                   )}
                   {r.status === "pending" ? (
-                    <button
-                      disabled={activatingId === r.registrationId}
-                      onClick={() => handleActivate(r.registrationId)}
-                      className="w-full rounded-full bg-brass py-2.5 font-mono text-xs font-bold uppercase tracking-widest text-ink transition-colors hover:opacity-90 disabled:opacity-50"
-                    >
-                      {activatingId === r.registrationId
-                        ? "Activating..."
-                        : "✓ Confirm Payment & Activate"}
-                    </button>
+                    <div className="flex flex-col gap-2">
+                      <button
+                        disabled={activatingId === r.registrationId}
+                        onClick={() => handleActivate(r.registrationId)}
+                        className="w-full rounded-full bg-brass py-2.5 font-mono text-xs font-bold uppercase tracking-widest text-ink transition-colors hover:opacity-90 disabled:opacity-50"
+                      >
+                        {activatingId === r.registrationId
+                          ? "Activating..."
+                          : "✓ Confirm Payment & Activate"}
+                      </button>
+                      <button
+                        onClick={() => setConfirmDialog({ kind: "reject-registration", regId: r.registrationId, name: r.firstName, planName: r.planName })}
+                        className="w-full rounded-full border border-ember/40 py-2.5 font-mono text-xs font-bold uppercase tracking-widest text-ember transition-colors hover:bg-ember/10"
+                      >
+                        ✕ Reject Request
+                      </button>
+                    </div>
                   ) : r.isExpiringSoon && r.status === "active" && r.phone ? (
                     <a
                       href={waLink(r.phone, `${r.firstName}`, r.planName, r.endDate)}
@@ -1209,6 +1241,21 @@ export default function AdminPage({ onClose }) {
             const { userId, nextActive } = confirmDialog;
             setConfirmDialog(null);
             updateMemberStatus(userId, nextActive);
+          }}
+        />
+      )}
+
+      {confirmDialog?.kind === "reject-registration" && (
+        <ConfirmDialog
+          title="Reject this plan request?"
+          message={`"${confirmDialog.name}"'s pending request for the ${confirmDialog.planName} plan will be cancelled. They can submit a new request anytime.`}
+          confirmLabel="Reject"
+          tone="ember"
+          onCancel={() => setConfirmDialog(null)}
+          onConfirm={() => {
+            const { regId } = confirmDialog;
+            setConfirmDialog(null);
+            handleRejectRegistration(regId);
           }}
         />
       )}

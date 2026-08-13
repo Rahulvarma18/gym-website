@@ -8,6 +8,19 @@ export const registerForPlan = async (req, res) => {
     try {
         const { planId, planName, planPrice, paymentMethod = 'cash' } = req.body;
 
+        // An inactive member (auto-paused for missing attendance, or
+        // manually deactivated by an admin) shouldn't be able to queue up
+        // a brand-new plan request while their account is inactive - they
+        // need to be reactivated first (by checking in again or by an
+        // admin), which also resumes whatever plan they already had.
+        if (!req.user.isActive) {
+            return res.status(403).json({
+                success: false,
+                message:
+                    'Your account is currently inactive, so new plan requests are on hold. Please contact the gym to get reactivated first.',
+            });
+        }
+
         let plan = null;
         if (planId) {
             plan = await Plan.findById(planId);
@@ -187,6 +200,18 @@ export const renewRegistration = async (req, res) => {
             return res.status(403).json({
                 success: false,
                 message: 'Not authorized to renew this registration',
+            });
+        }
+
+        // A member can't self-renew while their account is inactive - that
+        // would silently undo the pause an admin (or the attendance cron)
+        // put in place. An admin renewing on someone's behalf is a
+        // deliberate action and is allowed through.
+        if (!req.user.isAdmin && !req.user.isActive) {
+            return res.status(403).json({
+                success: false,
+                message:
+                    'Your account is currently inactive, so you can\'t renew a plan yet. Please contact the gym to get reactivated first.',
             });
         }
 
