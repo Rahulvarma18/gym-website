@@ -80,6 +80,13 @@ export default function Pricing({ onOpenAuth }) {
     fetchPlans();
   }, [fetchPlans]);
 
+  // The status banner ("Selected X plan! ...") is only meaningful for the
+  // user who triggered it - once they log out it's stale and shouldn't
+  // keep showing to whoever uses this browser/tab next.
+  useEffect(() => {
+    if (!user) setStatusMsg({ type: "", text: "" });
+  }, [user]);
+
   async function handleSelectPlan(plan) {
     if (!user) {
       onOpenAuth?.("login");
@@ -140,7 +147,7 @@ export default function Pricing({ onOpenAuth }) {
         {statusMsg.text && (
           <div
             className={`mt-6 rounded-xl border px-5 py-4 font-mono text-xs ${statusMsg.type === "success"
-              ? "border-emerald-500/40 bg-emerald-950/30 text-emerald-300"
+              ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700"
               : "border-ember/40 bg-ember/10 text-ember"
               }`}
           >

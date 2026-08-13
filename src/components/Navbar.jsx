@@ -15,6 +15,14 @@ const left = [
 ];
 const right = [{ label: "Contact", href: "/#contact" }];
 
+// react-router's Link doesn't trigger a scroll when the target route is the
+// one you're already on (e.g. clicking the logo while already on "/"), so
+// ScrollToTop.jsx's route-change effect never fires. Scroll explicitly here
+// as well so the logo always takes you to the top, same-page or not.
+function scrollToTop() {
+  window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+}
+
 export default function Navbar({ onAdminClick, onOpenAuth }) {
   const [modal, setModal] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -50,6 +58,7 @@ export default function Navbar({ onAdminClick, onOpenAuth }) {
 
             <Link
               to="/"
+              onClick={scrollToTop}
               className="flex items-center rounded-b-3xl bg-secondary px-12 py-3 shadow-[0_1px_0_var(--color-border)]"
             >
               <span className="font-display text-xl font-semibold tracking-[0.32em]">
@@ -89,11 +98,15 @@ export default function Navbar({ onAdminClick, onOpenAuth }) {
               )}
 
               <button
-                aria-label={user?.isAdmin ? "Admin panel" : "Account"}
-                onClick={() =>
-                  user?.isAdmin ? onAdminClick?.() : triggerAuth("login")
-                }
-                className="flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform hover:scale-[1.06]"
+                aria-label={user?.isAdmin ? "Admin panel" : user ? "Account" : "Log in"}
+                title={user && !user.isAdmin ? `Logged in as ${user.firstName || user.email}` : undefined}
+                onClick={() => {
+                  if (user?.isAdmin) onAdminClick?.();
+                  else if (!user) triggerAuth("login");
+                  // logged-in, non-admin: no-op, they already have Log Out
+                }}
+                className={`flex size-10 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform ${user && !user.isAdmin ? "cursor-default" : "hover:scale-[1.06]"
+                  }`}
               >
                 {user?.isAdmin ? (
                   <Settings className="size-4" />
@@ -108,6 +121,7 @@ export default function Navbar({ onAdminClick, onOpenAuth }) {
           <div className="flex w-full items-center justify-between px-5 py-3 md:hidden">
             <Link
               to="/"
+              onClick={scrollToTop}
               className="flex items-center rounded-full bg-secondary px-4 py-2 text-sm font-semibold tracking-wide"
             >
               JAYRAM<span className="text-ember">FITNESS</span>
@@ -133,11 +147,15 @@ export default function Navbar({ onAdminClick, onOpenAuth }) {
               )}
 
               <button
-                aria-label={user?.isAdmin ? "Admin panel" : "Account"}
-                onClick={() =>
-                  user?.isAdmin ? onAdminClick?.() : triggerAuth("login")
-                }
-                className="flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform hover:scale-[1.06]"
+                aria-label={user?.isAdmin ? "Admin panel" : user ? "Account" : "Log in"}
+                title={user && !user.isAdmin ? `Logged in as ${user.firstName || user.email}` : undefined}
+                onClick={() => {
+                  if (user?.isAdmin) onAdminClick?.();
+                  else if (!user) triggerAuth("login");
+                  // logged-in, non-admin: no-op, they already have Log Out
+                }}
+                className={`flex size-9 items-center justify-center rounded-full bg-primary text-primary-foreground transition-transform ${user && !user.isAdmin ? "cursor-default" : "hover:scale-[1.06]"
+                  }`}
               >
                 {user?.isAdmin ? (
                   <Settings className="size-4" />

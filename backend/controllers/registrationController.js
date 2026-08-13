@@ -315,6 +315,45 @@ export const cancelRegistration = async (req, res) => {
     }
 };
 
+// @route   DELETE /api/registrations/:id/reject
+// @desc    Reject a pending plan request (Admin only) - permanently deletes
+//          the registration record rather than just marking it cancelled,
+//          since a rejected request shouldn't leave the member's data
+//          sitting around in the admin dashboard.
+export const rejectRegistration = async (req, res) => {
+    try {
+        const registration = await Registration.findById(req.params.id);
+
+        if (!registration) {
+            return res.status(404).json({
+                success: false,
+                message: 'Registration not found',
+            });
+        }
+
+        if (registration.status !== 'pending') {
+            return res.status(400).json({
+                success: false,
+                message: 'Only pending requests can be rejected. Use cancel for active plans.',
+            });
+        }
+
+        await Registration.findByIdAndDelete(req.params.id);
+
+        res.status(200).json({
+            success: true,
+            message: 'Plan request rejected and removed successfully',
+        });
+    } catch (error) {
+        console.error('Reject registration error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Error rejecting registration',
+            error: error.message,
+        });
+    }
+};
+
 // @route   PUT /api/registrations/:id/activate
 // @desc    Activate pending registration (Admin only after receiving payment)
 export const activateRegistration = async (req, res) => {
@@ -402,4 +441,5 @@ export default {
     renewRegistration,
     cancelRegistration,
     activateRegistration,
+    rejectRegistration,
 };

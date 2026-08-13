@@ -718,14 +718,14 @@ export default function AdminPage({ onClose }) {
 
   async function handleRejectRegistration(regId) {
     try {
-      const res = await fetch(`${API}/registrations/${regId}/cancel`, {
-        method: "PUT",
+      const res = await fetch(`${API}/registrations/${regId}/reject`, {
+        method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (!data.success) throw new Error(data.message || "Failed to reject request");
       await fetchData();
-      setToast({ message: "Plan request rejected.", tone: "emerald" });
+      setToast({ message: "Plan request rejected and removed.", tone: "emerald" });
     } catch (err) {
       setToast({ message: err.message || "Failed to reject request", tone: "ember" });
     }
@@ -1248,7 +1248,7 @@ export default function AdminPage({ onClose }) {
       {confirmDialog?.kind === "reject-registration" && (
         <ConfirmDialog
           title="Reject this plan request?"
-          message={`"${confirmDialog.name}"'s pending request for the ${confirmDialog.planName} plan will be cancelled. They can submit a new request anytime.`}
+          message={`"${confirmDialog.name}"'s pending request for the ${confirmDialog.planName} plan will be permanently deleted. They can submit a new request anytime.`}
           confirmLabel="Reject"
           tone="ember"
           onCancel={() => setConfirmDialog(null)}

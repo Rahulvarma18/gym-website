@@ -7,6 +7,7 @@ import {
     renewRegistration,
     cancelRegistration,
     activateRegistration,
+    rejectRegistration,
 } from '../controllers/registrationController.js';
 import { protect, isAdmin } from '../middleware/auth.js';
 
@@ -45,5 +46,9 @@ router.put('/:id/cancel', protect, cancelRegistration);
 // @route   PUT /api/registrations/:id/activate
 // @desc    Activate pending registration (Admin only)
 router.put('/:id/activate', protect, isAdmin, activateRegistration);
+
+// @route   DELETE /api/registrations/:id/reject
+// @desc    Reject a pending plan request - permanently deletes it (Admin only)
+router.delete('/:id/reject', protect, isAdmin, rejectRegistration);
 
 export default router;
